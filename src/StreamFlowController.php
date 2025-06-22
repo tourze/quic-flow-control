@@ -63,7 +63,7 @@ class StreamFlowController
 
     /**
      * 消费发送窗口
-     * 
+     *
      * @param int $bytes 要发送的字节数
      * @return bool 是否成功发送
      * @throws FlowControlException 当窗口不足时
@@ -95,7 +95,7 @@ class StreamFlowController
 
     /**
      * 消费接收窗口
-     * 
+     *
      * @param int $bytes 接收的字节数
      * @return bool 是否成功接收
      * @throws FlowControlException 当窗口不足时

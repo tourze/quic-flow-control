@@ -95,7 +95,7 @@ class ConnectionFlowController
 
     /**
      * 发送数据（同时消费连接级和流级窗口）
-     * 
+     *
      * @param int $streamId 流ID
      * @param int $bytes 要发送的字节数
      * @return bool 是否成功发送
@@ -133,7 +133,7 @@ class ConnectionFlowController
 
     /**
      * 接收数据（同时消费连接级和流级窗口）
-     * 
+     *
      * @param int $streamId 流ID
      * @param int $bytes 接收的字节数
      * @return bool 是否成功接收

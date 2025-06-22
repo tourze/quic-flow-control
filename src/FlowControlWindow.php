@@ -69,7 +69,7 @@ class FlowControlWindow
 
     /**
      * 消费发送窗口
-     * 
+     *
      * @param int $bytes 要发送的字节数
      * @throws FlowControlException 当窗口不足时
      */
@@ -88,7 +88,7 @@ class FlowControlWindow
 
     /**
      * 消费接收窗口
-     * 
+     *
      * @param int $bytes 接收的字节数
      * @throws FlowControlException 当窗口不足时
      */

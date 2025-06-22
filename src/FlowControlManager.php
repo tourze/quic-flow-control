@@ -71,7 +71,7 @@ class FlowControlManager
 
     /**
      * 发送数据
-     * 
+     *
      * @param int $streamId 流ID
      * @param int $bytes 要发送的字节数
      * @return bool 是否成功发送
@@ -88,7 +88,7 @@ class FlowControlManager
 
     /**
      * 接收数据
-     * 
+     *
      * @param int $streamId 流ID
      * @param int $bytes 接收的字节数
      * @return bool 是否成功接收

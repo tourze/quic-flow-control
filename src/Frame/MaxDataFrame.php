@@ -7,6 +7,7 @@ namespace Tourze\QUIC\FlowControl\Frame;
 use Tourze\QUIC\Core\Enum\FrameType;
 use Tourze\QUIC\Core\VariableInteger;
 use Tourze\QUIC\Frames\Frame;
+use Tourze\QUIC\FlowControl\Exception\InvalidFrameParameterException;
 
 /**
  * MAX_DATA 帧
@@ -23,7 +24,7 @@ class MaxDataFrame extends Frame
         private readonly int $maxData
     ) {
         if ($maxData < 0) {
-            throw new \InvalidArgumentException('最大数据量不能为负数');
+            throw new InvalidFrameParameterException('最大数据量不能为负数');
         }
     }
 
@@ -49,12 +50,12 @@ class MaxDataFrame extends Frame
     public static function decode(string $data, int $offset = 0): array
     {
         if (strlen($data) <= $offset) {
-            throw new \InvalidArgumentException('数据不足');
+            throw new InvalidFrameParameterException('数据不足');
         }
 
         $frameType = ord($data[$offset]);
         if ($frameType !== FrameType::MAX_DATA->value) {
-            throw new \InvalidArgumentException('帧类型不匹配');
+            throw new InvalidFrameParameterException('帧类型不匹配');
         }
 
         $offset++;

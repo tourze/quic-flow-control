@@ -7,10 +7,11 @@ namespace Tourze\QUIC\FlowControl\Frame;
 use Tourze\QUIC\Core\Enum\FrameType;
 use Tourze\QUIC\Core\VariableInteger;
 use Tourze\QUIC\Frames\Frame;
+use Tourze\QUIC\FlowControl\Exception\InvalidFrameParameterException;
 
 /**
  * STREAM_DATA_BLOCKED 帧
- * 
+ *
  * 表示流级流量控制阻塞
  * 参考：https://tools.ietf.org/html/rfc9000#section-19.13
  */
@@ -25,10 +26,10 @@ class StreamDataBlockedFrame extends Frame
         private readonly int $streamDataLimit
     ) {
         if ($streamId < 0) {
-            throw new \InvalidArgumentException('流ID不能为负数');
+            throw new InvalidFrameParameterException('流ID不能为负数');
         }
         if ($streamDataLimit < 0) {
-            throw new \InvalidArgumentException('流数据限制不能为负数');
+            throw new InvalidFrameParameterException('流数据限制不能为负数');
         }
     }
 
@@ -56,12 +57,12 @@ class StreamDataBlockedFrame extends Frame
     public static function decode(string $data, int $offset = 0): array
     {
         if (strlen($data) <= $offset) {
-            throw new \InvalidArgumentException('数据不足');
+            throw new InvalidFrameParameterException('数据不足');
         }
 
         $frameType = ord($data[$offset]);
         if ($frameType !== FrameType::STREAM_DATA_BLOCKED->value) {
-            throw new \InvalidArgumentException('帧类型不匹配');
+            throw new InvalidFrameParameterException('帧类型不匹配');
         }
 
         $offset++;

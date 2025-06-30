@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Tourze\QUIC\FlowControl\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Tourze\QUIC\FlowControl\FlowControlException;
+use Tourze\QUIC\FlowControl\Exception\FlowControlException;
+use Tourze\QUIC\FlowControl\Exception\InvalidFlowControlWindowException;
 use Tourze\QUIC\FlowControl\FlowControlWindow;
 
 class FlowControlWindowTest extends TestCase
@@ -21,21 +22,21 @@ class FlowControlWindowTest extends TestCase
 
     public function testConstructionWithInvalidMaxData(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidFlowControlWindowException::class);
         $this->expectExceptionMessage('最大数据量不能为负数');
         new FlowControlWindow(-1);
     }
 
     public function testConstructionWithNegativeConsumedData(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidFlowControlWindowException::class);
         $this->expectExceptionMessage('已消费数据量不能为负数');
         new FlowControlWindow(1000, -1);
     }
 
     public function testConstructionWithNegativeSentData(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidFlowControlWindowException::class);
         $this->expectExceptionMessage('已发送数据量不能为负数');
         new FlowControlWindow(1000, 0, -1);
     }
@@ -87,7 +88,7 @@ class FlowControlWindowTest extends TestCase
     public function testConsumeSendWindowWithNegativeBytes(): void
     {
         $window = new FlowControlWindow(1000);
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidFlowControlWindowException::class);
         $this->expectExceptionMessage('字节数不能为负数');
         $window->consumeSendWindow(-100);
     }
@@ -111,7 +112,7 @@ class FlowControlWindowTest extends TestCase
     public function testConsumeReceiveWindowWithNegativeBytes(): void
     {
         $window = new FlowControlWindow(1000);
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidFlowControlWindowException::class);
         $this->expectExceptionMessage('字节数不能为负数');
         $window->consumeReceiveWindow(-100);
     }
@@ -195,7 +196,7 @@ class FlowControlWindowTest extends TestCase
     public function testResetSentDataWithNegativeValue(): void
     {
         $window = new FlowControlWindow(1000);
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidFlowControlWindowException::class);
         $this->expectExceptionMessage('已发送数据量不能为负数');
         $window->resetSentData(-100);
     }

@@ -8,7 +8,7 @@ use Tourze\QUIC\Core\Constants;
 
 /**
  * 流量控制管理器
- * 
+ *
  * 统一管理连接级和流级流量控制，提供高级接口
  * 参考：https://tools.ietf.org/html/rfc9000#section-4
  */

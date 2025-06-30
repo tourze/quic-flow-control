@@ -28,7 +28,7 @@ class StreamFlowControllerTest extends TestCase
 
     public function testConstructionWithNegativeStreamId(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\Tourze\QUIC\FlowControl\Exception\InvalidStreamControllerException::class);
         $this->expectExceptionMessage('流ID不能为负数');
         new StreamFlowController(-1);
     }
@@ -156,7 +156,9 @@ class StreamFlowControllerTest extends TestCase
     {
         $controller = new StreamFlowController(1, 1000, 1000);
         $controller->send(500);
-        $this->assertTrue($controller->isSendBlocked() || !$controller->isSendBlocked()); // May or may not be blocked
+        
+        // 验证发送了数据后的状态
+        $this->assertEquals(500, $controller->getSendWindow()->getSentData());
         
         $controller->reset();
         $this->assertFalse($controller->isSendBlocked());

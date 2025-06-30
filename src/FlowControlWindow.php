@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\FlowControl;
 
+use Tourze\QUIC\FlowControl\Exception\FlowControlException;
+use Tourze\QUIC\FlowControl\Exception\InvalidFlowControlWindowException;
+
 /**
  * 流量控制窗口
- * 
+ *
  * 管理发送和接收窗口，用于连接级和流级流量控制
  * 参考：https://tools.ietf.org/html/rfc9000#section-4
  */
@@ -25,13 +28,13 @@ class FlowControlWindow
         private ?int $blockedAt = null
     ) {
         if ($maxData < 0) {
-            throw new \InvalidArgumentException('最大数据量不能为负数');
+            throw new InvalidFlowControlWindowException('最大数据量不能为负数');
         }
         if ($consumedData < 0) {
-            throw new \InvalidArgumentException('已消费数据量不能为负数');
+            throw new InvalidFlowControlWindowException('已消费数据量不能为负数');
         }
         if ($sentData < 0) {
-            throw new \InvalidArgumentException('已发送数据量不能为负数');
+            throw new InvalidFlowControlWindowException('已发送数据量不能为负数');
         }
     }
 
@@ -76,7 +79,7 @@ class FlowControlWindow
     public function consumeSendWindow(int $bytes): void
     {
         if ($bytes < 0) {
-            throw new \InvalidArgumentException('字节数不能为负数');
+            throw new InvalidFlowControlWindowException('字节数不能为负数');
         }
 
         if (!$this->canSend($bytes)) {
@@ -95,7 +98,7 @@ class FlowControlWindow
     public function consumeReceiveWindow(int $bytes): void
     {
         if ($bytes < 0) {
-            throw new \InvalidArgumentException('字节数不能为负数');
+            throw new InvalidFlowControlWindowException('字节数不能为负数');
         }
 
         if (!$this->canReceive($bytes)) {
@@ -176,7 +179,7 @@ class FlowControlWindow
     public function resetSentData(int $sentData = 0): void
     {
         if ($sentData < 0) {
-            throw new \InvalidArgumentException('已发送数据量不能为负数');
+            throw new InvalidFlowControlWindowException('已发送数据量不能为负数');
         }
         $this->sentData = $sentData;
     }

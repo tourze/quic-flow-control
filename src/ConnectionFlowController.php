@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Tourze\QUIC\FlowControl;
 
 use Tourze\QUIC\Core\Constants;
+use Tourze\QUIC\FlowControl\Exception\FlowControlException;
 
 /**
  * 连接级流量控制器
- * 
+ *
  * 管理整个连接的发送和接收流量控制窗口
  * 参考：https://tools.ietf.org/html/rfc9000#section-4.1
  */

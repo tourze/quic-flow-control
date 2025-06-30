@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tourze\QUIC\FlowControl;
 
 use Tourze\QUIC\Core\Constants;
+use Tourze\QUIC\FlowControl\Exception\FlowControlException;
+use Tourze\QUIC\FlowControl\Exception\InvalidStreamControllerException;
 
 /**
  * 流级流量控制器
- * 
+ *
  * 管理单个流的发送和接收流量控制窗口
  * 参考：https://tools.ietf.org/html/rfc9000#section-4.1
  */
@@ -30,7 +32,7 @@ class StreamFlowController
         int $localInitialMaxStreamData = Constants::DEFAULT_MAX_STREAM_DATA
     ) {
         if ($streamId < 0) {
-            throw new \InvalidArgumentException('流ID不能为负数');
+            throw new InvalidStreamControllerException('流ID不能为负数');
         }
 
         $this->sendWindow = new FlowControlWindow($initialMaxStreamData);

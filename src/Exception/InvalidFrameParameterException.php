@@ -9,4 +9,6 @@ namespace Tourze\QUIC\FlowControl\Exception;
  *
  * 当流量控制帧参数无效时抛出此异常
  */
-class InvalidFrameParameterException extends FlowControlException {}
+class InvalidFrameParameterException extends FlowControlException
+{
+}

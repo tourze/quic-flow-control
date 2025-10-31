@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\FlowControl\Tests\Frame;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Core\Enum\FrameType;
-use Tourze\QUIC\FlowControl\Frame\StreamDataBlockedFrame;
 use Tourze\QUIC\FlowControl\Exception\InvalidFrameParameterException;
+use Tourze\QUIC\FlowControl\Frame\StreamDataBlockedFrame;
 
-class StreamDataBlockedFrameTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(StreamDataBlockedFrame::class)]
+final class StreamDataBlockedFrameTest extends TestCase
 {
     public function testConstruction(): void
     {
@@ -44,7 +49,7 @@ class StreamDataBlockedFrameTest extends TestCase
     {
         $frame = new StreamDataBlockedFrame(1, 1000);
         $encoded = $frame->encode();
-        
+
         [$decodedFrame, $consumed] = StreamDataBlockedFrame::decode($encoded);
         $this->assertInstanceOf(StreamDataBlockedFrame::class, $decodedFrame);
         $this->assertEquals(1, $decodedFrame->getStreamId());
@@ -88,4 +93,4 @@ class StreamDataBlockedFrameTest extends TestCase
         $frame = new StreamDataBlockedFrame(1, 1000);
         $this->assertEquals('STREAM_DATA_BLOCKED(stream_id=1, stream_data_limit=1000)', $frame->__toString());
     }
-} 
+}

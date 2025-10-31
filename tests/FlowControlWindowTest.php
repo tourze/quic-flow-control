@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\FlowControl\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Tourze\QUIC\FlowControl\Exception\FlowControlException;
 use Tourze\QUIC\FlowControl\Exception\InvalidFlowControlWindowException;
 use Tourze\QUIC\FlowControl\FlowControlWindow;
 
-class FlowControlWindowTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(FlowControlWindow::class)]
+final class FlowControlWindowTest extends TestCase
 {
     public function testConstruction(): void
     {
@@ -80,7 +84,7 @@ class FlowControlWindowTest extends TestCase
     public function testConsumeSendWindowWithInsufficientSpace(): void
     {
         $window = new FlowControlWindow(1000, 0, 800);
-        $this->expectException(FlowControlException::class);
+        $this->expectException(InvalidFlowControlWindowException::class);
         $this->expectExceptionMessage('发送窗口不足：需要 300 字节，可用 200 字节');
         $window->consumeSendWindow(300);
     }
@@ -104,7 +108,7 @@ class FlowControlWindowTest extends TestCase
     public function testConsumeReceiveWindowWithInsufficientSpace(): void
     {
         $window = new FlowControlWindow(1000, 800);
-        $this->expectException(FlowControlException::class);
+        $this->expectException(InvalidFlowControlWindowException::class);
         $this->expectExceptionMessage('接收窗口不足：需要 300 字节，可用 200 字节');
         $window->consumeReceiveWindow(300);
     }
@@ -127,7 +131,7 @@ class FlowControlWindowTest extends TestCase
     public function testUpdateMaxDataWithSmallerValue(): void
     {
         $window = new FlowControlWindow(1000);
-        $this->expectException(FlowControlException::class);
+        $this->expectException(InvalidFlowControlWindowException::class);
         $this->expectExceptionMessage('不能降低最大数据量：当前 1000，新值 800');
         $window->updateMaxData(800);
     }
@@ -205,9 +209,9 @@ class FlowControlWindowTest extends TestCase
     {
         $window = new FlowControlWindow(1000);
         $receiveWindow = $window->createReceiveWindow(2000);
-        
+
         $this->assertEquals(2000, $receiveWindow->getMaxData());
         $this->assertEquals(0, $receiveWindow->getConsumedData());
         $this->assertEquals(0, $receiveWindow->getSentData());
     }
-} 
+}

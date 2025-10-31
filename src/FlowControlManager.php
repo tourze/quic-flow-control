@@ -14,24 +14,24 @@ use Tourze\QUIC\Core\Constants;
  */
 class FlowControlManager
 {
-    private ConnectionFlowController $connectionController;
-    
+    private ConnectionFlowControl $connectionController;
+
     /** @var array<int, array{type: string, data: mixed}> 待发送的流控制帧 */
     private array $pendingFrames = [];
 
     /**
-     * @param int $initialMaxData 初始连接级最大数据量
-     * @param int $localInitialMaxData 本地初始连接级最大数据量
-     * @param int $initialMaxStreamData 初始流级最大数据量
+     * @param int $initialMaxData            初始连接级最大数据量
+     * @param int $localInitialMaxData       本地初始连接级最大数据量
+     * @param int $initialMaxStreamData      初始流级最大数据量
      * @param int $localInitialMaxStreamData 本地初始流级最大数据量
      */
     public function __construct(
         int $initialMaxData = Constants::DEFAULT_MAX_DATA,
         int $localInitialMaxData = Constants::DEFAULT_MAX_DATA,
         private readonly int $initialMaxStreamData = Constants::DEFAULT_MAX_STREAM_DATA,
-        private readonly int $localInitialMaxStreamData = Constants::DEFAULT_MAX_STREAM_DATA
+        private readonly int $localInitialMaxStreamData = Constants::DEFAULT_MAX_STREAM_DATA,
     ) {
-        $this->connectionController = new ConnectionFlowController(
+        $this->connectionController = new ConnectionFlowControl(
             $initialMaxData,
             $localInitialMaxData
         );
@@ -40,16 +40,16 @@ class FlowControlManager
     /**
      * 创建新流的流量控制器
      */
-    public function createStream(int $streamId): StreamFlowController
+    public function createStream(int $streamId): StreamFlowControl
     {
-        $streamController = new StreamFlowController(
+        $streamController = new StreamFlowControl(
             $streamId,
             $this->initialMaxStreamData,
             $this->localInitialMaxStreamData
         );
-        
+
         $this->connectionController->registerStream($streamController);
-        
+
         return $streamController;
     }
 
@@ -73,16 +73,17 @@ class FlowControlManager
      * 发送数据
      *
      * @param int $streamId 流ID
-     * @param int $bytes 要发送的字节数
+     * @param int $bytes    要发送的字节数
+     *
      * @return bool 是否成功发送
      */
     public function sendData(int $streamId, int $bytes): bool
     {
         $success = $this->connectionController->send($streamId, $bytes);
-        
+
         // 检查是否需要生成阻塞帧
         $this->checkAndGenerateBlockedFrames();
-        
+
         return $success;
     }
 
@@ -90,16 +91,17 @@ class FlowControlManager
      * 接收数据
      *
      * @param int $streamId 流ID
-     * @param int $bytes 接收的字节数
+     * @param int $bytes    接收的字节数
+     *
      * @return bool 是否成功接收
      */
     public function receiveData(int $streamId, int $bytes): bool
     {
         $success = $this->connectionController->receive($streamId, $bytes);
-        
+
         // 检查是否需要发送窗口更新
         $this->checkAndGenerateMaxDataFrames();
-        
+
         return $success;
     }
 
@@ -117,7 +119,7 @@ class FlowControlManager
     public function handleMaxStreamDataFrame(int $streamId, int $maxStreamData): void
     {
         $streamController = $this->connectionController->getStreamController($streamId);
-        if ($streamController !== null) {
+        if (null !== $streamController) {
             $streamController->updateSendWindow($maxStreamData);
         }
     }
@@ -142,7 +144,7 @@ class FlowControlManager
     {
         // 对方被流级流量控制阻塞，可能需要发送 MAX_STREAM_DATA 更新
         $streamController = $this->connectionController->getStreamController($streamId);
-        if ($streamController !== null && $streamController->shouldSendMaxStreamData()) {
+        if (null !== $streamController && $streamController->shouldSendMaxStreamData()) {
             $this->addPendingFrame('MAX_STREAM_DATA', [
                 'stream_id' => $streamId,
                 'max_stream_data' => $streamController->getNextMaxStreamData(),
@@ -155,27 +157,44 @@ class FlowControlManager
      */
     private function checkAndGenerateBlockedFrames(): void
     {
-        // 检查连接级阻塞
-        if ($this->connectionController->isSendBlocked()) {
-            $offset = $this->connectionController->getDataBlockedOffset();
-            if ($offset !== null) {
-                $this->addPendingFrame('DATA_BLOCKED', [
-                    'data_limit' => $offset,
-                ]);
-            }
+        $this->checkConnectionLevelBlocking();
+        $this->checkStreamLevelBlocking();
+    }
+
+    /**
+     * 检查连接级阻塞
+     */
+    private function checkConnectionLevelBlocking(): void
+    {
+        if (!$this->connectionController->isSendBlocked()) {
+            return;
         }
 
-        // 检查流级阻塞
+        $offset = $this->connectionController->getDataBlockedOffset();
+        if (null !== $offset) {
+            $this->addPendingFrame('DATA_BLOCKED', [
+                'data_limit' => $offset,
+            ]);
+        }
+    }
+
+    /**
+     * 检查流级阻塞
+     */
+    private function checkStreamLevelBlocking(): void
+    {
         foreach ($this->connectionController->getBlockedStreams() as $streamId) {
             $streamController = $this->connectionController->getStreamController($streamId);
-            if ($streamController !== null) {
-                $offset = $streamController->getStreamDataBlockedOffset();
-                if ($offset !== null) {
-                    $this->addPendingFrame('STREAM_DATA_BLOCKED', [
-                        'stream_id' => $streamId,
-                        'stream_data_limit' => $offset,
-                    ]);
-                }
+            if (null === $streamController) {
+                continue;
+            }
+
+            $offset = $streamController->getStreamDataBlockedOffset();
+            if (null !== $offset) {
+                $this->addPendingFrame('STREAM_DATA_BLOCKED', [
+                    'stream_id' => $streamId,
+                    'stream_data_limit' => $offset,
+                ]);
             }
         }
     }
@@ -203,6 +222,7 @@ class FlowControlManager
 
     /**
      * 添加待发送的流控制帧
+     * @param array<string, mixed> $data
      */
     private function addPendingFrame(string $type, array $data): void
     {
@@ -214,18 +234,20 @@ class FlowControlManager
 
     /**
      * 获取并清空待发送的流控制帧
+     * @return array<int, array<string, mixed>>
      */
     public function getPendingFrames(): array
     {
         $frames = $this->pendingFrames;
         $this->pendingFrames = [];
+
         return $frames;
     }
 
     /**
      * 获取连接控制器
      */
-    public function getConnectionController(): ConnectionFlowController
+    public function getConnectionController(): ConnectionFlowControl
     {
         return $this->connectionController;
     }
@@ -233,7 +255,7 @@ class FlowControlManager
     /**
      * 获取流控制器
      */
-    public function getStreamController(int $streamId): ?StreamFlowController
+    public function getStreamController(int $streamId): ?StreamFlowControl
     {
         return $this->connectionController->getStreamController($streamId);
     }
@@ -252,6 +274,7 @@ class FlowControlManager
     public function getAvailableStreamSendWindow(int $streamId): int
     {
         $streamController = $this->connectionController->getStreamController($streamId);
+
         return $streamController?->getAvailableSendWindow() ?? 0;
     }
 
@@ -269,6 +292,7 @@ class FlowControlManager
     public function isStreamBlocked(int $streamId): bool
     {
         $streamController = $this->connectionController->getStreamController($streamId);
+
         return $streamController?->isSendBlocked() ?? false;
     }
 
@@ -283,41 +307,39 @@ class FlowControlManager
 
     /**
      * 获取流量控制健康状态
+     * @return array<string, mixed>
      */
     public function getHealthStatus(): array
     {
         $stats = $this->connectionController->getConnectionStats();
-        
         $connectionUtilization = $stats['connection']['send_window']['utilization'];
         $blockedStreams = $stats['summary']['blocked_streams'];
         $totalStreams = $stats['summary']['total_streams'];
-        
+
+        // 检查连接利用率
+        $utilizationResult = $this->checkConnectionUtilization($connectionUtilization);
+
+        // 检查阻塞流比例
+        $blockedStreamsResult = $this->checkBlockedStreamsRatio($blockedStreams, $totalStreams);
+
+        // 合并状态和警告
         $status = 'healthy';
         $warnings = [];
-        
-        // 检查连接级利用率
-        if ($connectionUtilization > 0.9) {
-            $status = 'critical';
-            $warnings[] = '连接级发送窗口接近耗尽';
-        } elseif ($connectionUtilization > 0.7) {
-            $status = 'warning';
-            $warnings[] = '连接级发送窗口使用率较高';
+
+        // 应用连接利用率检查结果
+        if ('healthy' !== $utilizationResult['status']) {
+            $status = $utilizationResult['status'];
+            $warnings = array_merge($warnings, $utilizationResult['warnings']);
         }
-        
-        // 检查阻塞流的比例
-        if ($totalStreams > 0) {
-            $blockedRatio = $blockedStreams / $totalStreams;
-            if ($blockedRatio > 0.5) {
-                $status = 'critical';
-                $warnings[] = '超过一半的流被阻塞';
-            } elseif ($blockedRatio > 0.2) {
-                if ($status === 'healthy') {
-                    $status = 'warning';
-                }
-                $warnings[] = '较多流被阻塞';
+
+        // 应用阻塞流检查结果
+        if ('healthy' !== $blockedStreamsResult['status']) {
+            if ('critical' === $blockedStreamsResult['status'] || 'critical' !== $status) {
+                $status = $blockedStreamsResult['status'];
             }
+            $warnings = array_merge($warnings, $blockedStreamsResult['warnings']);
         }
-        
+
         return [
             'status' => $status,
             'warnings' => $warnings,
@@ -328,13 +350,72 @@ class FlowControlManager
     }
 
     /**
+     * 检查连接利用率状态
+     * @return array{status: string, warnings: string[]}
+     */
+    private function checkConnectionUtilization(float $utilization): array
+    {
+        if ($utilization > 0.9) {
+            return [
+                'status' => 'critical',
+                'warnings' => ['连接级发送窗口接近耗尽'],
+            ];
+        }
+        if ($utilization > 0.7) {
+            return [
+                'status' => 'warning',
+                'warnings' => ['连接级发送窗口使用率较高'],
+            ];
+        }
+
+        return [
+            'status' => 'healthy',
+            'warnings' => [],
+        ];
+    }
+
+    /**
+     * 检查阻塞流比例状态
+     * @return array{status: string, warnings: string[]}
+     */
+    private function checkBlockedStreamsRatio(int $blockedStreams, int $totalStreams): array
+    {
+        if (0 === $totalStreams) {
+            return [
+                'status' => 'healthy',
+                'warnings' => [],
+            ];
+        }
+
+        $blockedRatio = $blockedStreams / $totalStreams;
+        if ($blockedRatio > 0.5) {
+            return [
+                'status' => 'critical',
+                'warnings' => ['超过一半的流被阻塞'],
+            ];
+        }
+        if ($blockedRatio > 0.2) {
+            return [
+                'status' => 'warning',
+                'warnings' => ['较多流被阻塞'],
+            ];
+        }
+
+        return [
+            'status' => 'healthy',
+            'warnings' => [],
+        ];
+    }
+
+    /**
      * 获取完整的流量控制统计信息
+     * @return array<string, mixed>
      */
     public function getFullStats(): array
     {
         $connectionStats = $this->connectionController->getConnectionStats();
         $healthStatus = $this->getHealthStatus();
-        
+
         return [
             'health' => $healthStatus,
             'connection' => $connectionStats['connection'],
@@ -343,4 +424,4 @@ class FlowControlManager
             'pending_frames' => $this->pendingFrames,
         ];
     }
-} 
+}

@@ -6,8 +6,8 @@ namespace Tourze\QUIC\FlowControl\Frame;
 
 use Tourze\QUIC\Core\Enum\FrameType;
 use Tourze\QUIC\Core\VariableInteger;
-use Tourze\QUIC\Frames\Frame;
 use Tourze\QUIC\FlowControl\Exception\InvalidFrameParameterException;
+use Tourze\QUIC\Frames\Frame;
 
 /**
  * DATA_BLOCKED 帧
@@ -21,7 +21,7 @@ class DataBlockedFrame extends Frame
      * @param int $dataLimit 数据限制
      */
     public function __construct(
-        private readonly int $dataLimit
+        private readonly int $dataLimit,
     ) {
         if ($dataLimit < 0) {
             throw new InvalidFrameParameterException('数据限制不能为负数');
@@ -58,9 +58,9 @@ class DataBlockedFrame extends Frame
             throw new InvalidFrameParameterException('帧类型不匹配');
         }
 
-        $offset++;
+        ++$offset;
         [$dataLimit, $consumed] = VariableInteger::decode($data, $offset);
-        
+
         return [new self($dataLimit), $consumed + 1];
     }
 
@@ -111,4 +111,4 @@ class DataBlockedFrame extends Frame
     {
         return "DATA_BLOCKED(data_limit={$this->dataLimit})";
     }
-} 
+}

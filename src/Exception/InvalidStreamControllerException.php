@@ -9,4 +9,6 @@ namespace Tourze\QUIC\FlowControl\Exception;
  *
  * 当流控制器参数无效时抛出此异常
  */
-class InvalidStreamControllerException extends FlowControlException {}
+class InvalidStreamControllerException extends FlowControlException
+{
+}

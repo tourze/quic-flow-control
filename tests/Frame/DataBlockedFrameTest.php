@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\FlowControl\Tests\Frame;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Core\Enum\FrameType;
-use Tourze\QUIC\FlowControl\Frame\DataBlockedFrame;
 use Tourze\QUIC\FlowControl\Exception\InvalidFrameParameterException;
+use Tourze\QUIC\FlowControl\Frame\DataBlockedFrame;
 
-class DataBlockedFrameTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(DataBlockedFrame::class)]
+final class DataBlockedFrameTest extends TestCase
 {
     public function testConstruction(): void
     {
@@ -36,7 +41,7 @@ class DataBlockedFrameTest extends TestCase
     {
         $frame = new DataBlockedFrame(1000);
         $encoded = $frame->encode();
-        
+
         [$decodedFrame, $consumed] = DataBlockedFrame::decode($encoded);
         $this->assertInstanceOf(DataBlockedFrame::class, $decodedFrame);
         $this->assertEquals(1000, $decodedFrame->getDataLimit());
@@ -79,4 +84,4 @@ class DataBlockedFrameTest extends TestCase
         $frame = new DataBlockedFrame(1000);
         $this->assertEquals('DATA_BLOCKED(data_limit=1000)', $frame->__toString());
     }
-} 
+}

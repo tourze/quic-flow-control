@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\FlowControl\Tests\Frame;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tourze\QUIC\Core\Enum\FrameType;
-use Tourze\QUIC\FlowControl\Frame\MaxDataFrame;
 use Tourze\QUIC\FlowControl\Exception\InvalidFrameParameterException;
+use Tourze\QUIC\FlowControl\Frame\MaxDataFrame;
 
-class MaxDataFrameTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(MaxDataFrame::class)]
+final class MaxDataFrameTest extends TestCase
 {
     public function testConstruction(): void
     {
@@ -36,7 +41,7 @@ class MaxDataFrameTest extends TestCase
     {
         $frame = new MaxDataFrame(1000);
         $encoded = $frame->encode();
-        
+
         [$decodedFrame, $consumed] = MaxDataFrame::decode($encoded);
         $this->assertInstanceOf(MaxDataFrame::class, $decodedFrame);
         $this->assertEquals(1000, $decodedFrame->getMaxData());
@@ -79,4 +84,4 @@ class MaxDataFrameTest extends TestCase
         $frame = new MaxDataFrame(1000);
         $this->assertEquals('MAX_DATA(max_data=1000)', $frame->__toString());
     }
-} 
+}

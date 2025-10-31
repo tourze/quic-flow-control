@@ -9,4 +9,6 @@ namespace Tourze\QUIC\FlowControl\Exception;
  *
  * 当流量控制窗口参数无效时抛出此异常
  */
-class InvalidFlowControlWindowException extends FlowControlException {}
+class InvalidFlowControlWindowException extends FlowControlException
+{
+}

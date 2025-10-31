@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tourze\QUIC\FlowControl;
 
-use Tourze\QUIC\FlowControl\Exception\FlowControlException;
 use Tourze\QUIC\FlowControl\Exception\InvalidFlowControlWindowException;
 
 /**
@@ -16,16 +15,16 @@ use Tourze\QUIC\FlowControl\Exception\InvalidFlowControlWindowException;
 class FlowControlWindow
 {
     /**
-     * @param int $maxData 最大数据量
+     * @param int $maxData      最大数据量
      * @param int $consumedData 已消费的数据量
-     * @param int $sentData 已发送的数据量
-     * @param int $blockedAt 阻塞位置（用于发送 BLOCKED 帧）
+     * @param int $sentData     已发送的数据量
+     * @param int $blockedAt    阻塞位置（用于发送 BLOCKED 帧）
      */
     public function __construct(
         private int $maxData,
         private int $consumedData = 0,
         private int $sentData = 0,
-        private ?int $blockedAt = null
+        private ?int $blockedAt = null,
     ) {
         if ($maxData < 0) {
             throw new InvalidFlowControlWindowException('最大数据量不能为负数');
@@ -74,7 +73,8 @@ class FlowControlWindow
      * 消费发送窗口
      *
      * @param int $bytes 要发送的字节数
-     * @throws FlowControlException 当窗口不足时
+     *
+     * @throws InvalidFlowControlWindowException 当窗口不足时
      */
     public function consumeSendWindow(int $bytes): void
     {
@@ -83,7 +83,7 @@ class FlowControlWindow
         }
 
         if (!$this->canSend($bytes)) {
-            throw new FlowControlException("发送窗口不足：需要 {$bytes} 字节，可用 {$this->getAvailableSendWindow()} 字节");
+            throw new InvalidFlowControlWindowException("发送窗口不足：需要 {$bytes} 字节，可用 {$this->getAvailableSendWindow()} 字节");
         }
 
         $this->sentData += $bytes;
@@ -93,7 +93,8 @@ class FlowControlWindow
      * 消费接收窗口
      *
      * @param int $bytes 接收的字节数
-     * @throws FlowControlException 当窗口不足时
+     *
+     * @throws InvalidFlowControlWindowException 当窗口不足时
      */
     public function consumeReceiveWindow(int $bytes): void
     {
@@ -102,7 +103,7 @@ class FlowControlWindow
         }
 
         if (!$this->canReceive($bytes)) {
-            throw new FlowControlException("接收窗口不足：需要 {$bytes} 字节，可用 {$this->getAvailableReceiveWindow()} 字节");
+            throw new InvalidFlowControlWindowException("接收窗口不足：需要 {$bytes} 字节，可用 {$this->getAvailableReceiveWindow()} 字节");
         }
 
         $this->consumedData += $bytes;
@@ -114,13 +115,13 @@ class FlowControlWindow
     public function updateMaxData(int $maxData): void
     {
         if ($maxData < $this->maxData) {
-            throw new FlowControlException("不能降低最大数据量：当前 {$this->maxData}，新值 {$maxData}");
+            throw new InvalidFlowControlWindowException("不能降低最大数据量：当前 {$this->maxData}，新值 {$maxData}");
         }
 
         $this->maxData = $maxData;
-        
+
         // 清除阻塞状态
-        if ($this->blockedAt !== null && $this->maxData > $this->blockedAt) {
+        if (null !== $this->blockedAt && $this->maxData > $this->blockedAt) {
             $this->blockedAt = null;
         }
     }
@@ -138,7 +139,7 @@ class FlowControlWindow
      */
     public function isBlocked(): bool
     {
-        return $this->blockedAt !== null;
+        return null !== $this->blockedAt;
     }
 
     /**
@@ -189,7 +190,7 @@ class FlowControlWindow
      */
     public function isExhausted(): bool
     {
-        return $this->getAvailableSendWindow() === 0;
+        return 0 === $this->getAvailableSendWindow();
     }
 
     /**
@@ -197,7 +198,7 @@ class FlowControlWindow
      */
     public function isReceiveExhausted(): bool
     {
-        return $this->getAvailableReceiveWindow() === 0;
+        return 0 === $this->getAvailableReceiveWindow();
     }
 
     /**
@@ -205,9 +206,10 @@ class FlowControlWindow
      */
     public function getUtilization(): float
     {
-        if ($this->maxData === 0) {
+        if (0 === $this->maxData) {
             return 0.0;
         }
+
         return (float) $this->sentData / $this->maxData;
     }
 
@@ -216,9 +218,10 @@ class FlowControlWindow
      */
     public function getReceiveUtilization(): float
     {
-        if ($this->maxData === 0) {
+        if (0 === $this->maxData) {
             return 0.0;
         }
+
         return (float) $this->consumedData / $this->maxData;
     }
 
@@ -229,4 +232,4 @@ class FlowControlWindow
     {
         return new self($maxData, 0, 0);
     }
-} 
+}

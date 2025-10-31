@@ -2,33 +2,38 @@
 
 declare(strict_types=1);
 
-namespace Tourze\QUIC\FlowControl\Tests\Unit\Exception;
+namespace Tourze\QUIC\FlowControl\Tests\Exception;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitBase\AbstractExceptionTestCase;
 use Tourze\QUIC\FlowControl\Exception\FlowControlException;
-use Tourze\QUIC\FlowControl\Exception\InvalidFrameParameterException;
+use Tourze\QUIC\FlowControl\Exception\InvalidFlowControlWindowException;
 
-class InvalidFrameParameterExceptionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(InvalidFlowControlWindowException::class)]
+final class InvalidFlowControlWindowExceptionTest extends AbstractExceptionTestCase
 {
     public function testInheritance(): void
     {
-        $exception = new InvalidFrameParameterException();
+        $exception = new InvalidFlowControlWindowException();
         $this->assertInstanceOf(FlowControlException::class, $exception);
         $this->assertInstanceOf(\Exception::class, $exception);
     }
 
     public function testConstructionWithMessage(): void
     {
-        $message = '无效帧参数';
-        $exception = new InvalidFrameParameterException($message);
+        $message = '流量控制窗口无效';
+        $exception = new InvalidFlowControlWindowException($message);
         $this->assertEquals($message, $exception->getMessage());
     }
 
     public function testConstructionWithMessageAndCode(): void
     {
-        $message = '无效帧参数';
-        $code = 1003;
-        $exception = new InvalidFrameParameterException($message, $code);
+        $message = '流量控制窗口无效';
+        $code = 1002;
+        $exception = new InvalidFlowControlWindowException($message, $code);
         $this->assertEquals($message, $exception->getMessage());
         $this->assertEquals($code, $exception->getCode());
     }
@@ -36,7 +41,7 @@ class InvalidFrameParameterExceptionTest extends TestCase
     public function testConstructionWithPrevious(): void
     {
         $previous = new \Exception('原始异常');
-        $exception = new InvalidFrameParameterException('无效帧参数', 0, $previous);
+        $exception = new InvalidFlowControlWindowException('流量控制窗口无效', 0, $previous);
         $this->assertEquals($previous, $exception->getPrevious());
     }
 }

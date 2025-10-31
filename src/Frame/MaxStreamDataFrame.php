@@ -6,8 +6,8 @@ namespace Tourze\QUIC\FlowControl\Frame;
 
 use Tourze\QUIC\Core\Enum\FrameType;
 use Tourze\QUIC\Core\VariableInteger;
-use Tourze\QUIC\Frames\Frame;
 use Tourze\QUIC\FlowControl\Exception\InvalidFrameParameterException;
+use Tourze\QUIC\Frames\Frame;
 
 /**
  * MAX_STREAM_DATA 帧
@@ -18,12 +18,12 @@ use Tourze\QUIC\FlowControl\Exception\InvalidFrameParameterException;
 class MaxStreamDataFrame extends Frame
 {
     /**
-     * @param int $streamId 流ID
+     * @param int $streamId      流ID
      * @param int $maxStreamData 最大流数据量
      */
     public function __construct(
         private readonly int $streamId,
-        private readonly int $maxStreamData
+        private readonly int $maxStreamData,
     ) {
         if ($streamId < 0) {
             throw new InvalidFrameParameterException('流ID不能为负数');
@@ -46,7 +46,7 @@ class MaxStreamDataFrame extends Frame
      */
     public function encode(): string
     {
-        return chr($this->getType()->value) 
+        return chr($this->getType()->value)
             . VariableInteger::encode($this->streamId)
             . VariableInteger::encode($this->maxStreamData);
     }
@@ -65,15 +65,15 @@ class MaxStreamDataFrame extends Frame
             throw new InvalidFrameParameterException('帧类型不匹配');
         }
 
-        $offset++;
-        
+        ++$offset;
+
         // 解码流ID
         [$streamId, $consumed1] = VariableInteger::decode($data, $offset);
         $offset += $consumed1;
-        
+
         // 解码最大流数据量
         [$maxStreamData, $consumed2] = VariableInteger::decode($data, $offset);
-        
+
         return [new self($streamId, $maxStreamData), $consumed1 + $consumed2 + 1];
     }
 
@@ -122,7 +122,7 @@ class MaxStreamDataFrame extends Frame
      */
     public function getSize(): int
     {
-        return 1 
+        return 1
             + VariableInteger::getLength($this->streamId)
             + VariableInteger::getLength($this->maxStreamData);
     }

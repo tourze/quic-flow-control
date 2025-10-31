@@ -14,22 +14,25 @@ use Tourze\QUIC\FlowControl\Exception\InvalidStreamControllerException;
  * 管理单个流的发送和接收流量控制窗口
  * 参考：https://tools.ietf.org/html/rfc9000#section-4.1
  */
-class StreamFlowController
+class StreamFlowControl
 {
     private FlowControlWindow $sendWindow;
+
     private FlowControlWindow $receiveWindow;
+
     private bool $sendBlocked = false;
+
     private bool $receiveBlocked = false;
 
     /**
-     * @param int $streamId 流ID
-     * @param int $initialMaxStreamData 初始最大流数据量
+     * @param int $streamId                  流ID
+     * @param int $initialMaxStreamData      初始最大流数据量
      * @param int $localInitialMaxStreamData 本地初始最大流数据量
      */
     public function __construct(
         private readonly int $streamId,
         int $initialMaxStreamData = Constants::DEFAULT_MAX_STREAM_DATA,
-        int $localInitialMaxStreamData = Constants::DEFAULT_MAX_STREAM_DATA
+        int $localInitialMaxStreamData = Constants::DEFAULT_MAX_STREAM_DATA,
     ) {
         if ($streamId < 0) {
             throw new InvalidStreamControllerException('流ID不能为负数');
@@ -67,7 +70,9 @@ class StreamFlowController
      * 消费发送窗口
      *
      * @param int $bytes 要发送的字节数
+     *
      * @return bool 是否成功发送
+     *
      * @throws FlowControlException 当窗口不足时
      */
     public function send(int $bytes): bool
@@ -79,11 +84,12 @@ class StreamFlowController
         if (!$this->canSend($bytes)) {
             $this->sendBlocked = true;
             $this->sendWindow->setBlocked();
+
             return false;
         }
 
         $this->sendWindow->consumeSendWindow($bytes);
-        
+
         // 检查发送后窗口是否耗尽
         if ($this->sendWindow->isExhausted()) {
             $this->sendBlocked = true;
@@ -91,7 +97,7 @@ class StreamFlowController
         } else {
             $this->sendBlocked = false;
         }
-        
+
         return true;
     }
 
@@ -99,7 +105,9 @@ class StreamFlowController
      * 消费接收窗口
      *
      * @param int $bytes 接收的字节数
+     *
      * @return bool 是否成功接收
+     *
      * @throws FlowControlException 当窗口不足时
      */
     public function receive(int $bytes): bool
@@ -110,11 +118,13 @@ class StreamFlowController
 
         if (!$this->canReceive($bytes)) {
             $this->receiveBlocked = true;
+
             return false;
         }
 
         $this->receiveWindow->consumeReceiveWindow($bytes);
         $this->receiveBlocked = false;
+
         return true;
     }
 
@@ -124,7 +134,7 @@ class StreamFlowController
     public function updateSendWindow(int $maxStreamData): void
     {
         $this->sendWindow->updateMaxData($maxStreamData);
-        
+
         // 如果之前被阻塞，现在可能可以继续发送
         if ($this->sendBlocked && $this->sendWindow->getAvailableSendWindow() > 0) {
             $this->sendBlocked = false;
@@ -137,7 +147,7 @@ class StreamFlowController
     public function updateReceiveWindow(int $maxStreamData): void
     {
         $this->receiveWindow->updateMaxData($maxStreamData);
-        
+
         // 如果之前被阻塞，现在可能可以继续接收
         if ($this->receiveBlocked && $this->receiveWindow->getAvailableReceiveWindow() > 0) {
             $this->receiveBlocked = false;
@@ -168,6 +178,7 @@ class StreamFlowController
         if (!$this->isSendBlocked()) {
             return null;
         }
+
         return $this->sendWindow->getBlockedAt();
     }
 
@@ -210,6 +221,7 @@ class StreamFlowController
     {
         // 当接收窗口使用率超过一定阈值时发送更新
         $threshold = 0.5; // 50%
+
         return $this->receiveWindow->getReceiveUtilization() > $threshold;
     }
 
@@ -220,13 +232,13 @@ class StreamFlowController
     {
         $currentMax = $this->receiveWindow->getMaxData();
         $consumed = $this->receiveWindow->getConsumedData();
-        
+
         // 增加一个合理的窗口大小
         $additionalWindow = max(
             Constants::DEFAULT_MAX_STREAM_DATA,
             $currentMax - $consumed
         );
-        
+
         return $currentMax + $additionalWindow;
     }
 
@@ -242,6 +254,7 @@ class StreamFlowController
 
     /**
      * 获取流量控制统计信息
+     * @return array<string, mixed>
      */
     public function getStats(): array
     {
@@ -263,4 +276,4 @@ class StreamFlowController
             ],
         ];
     }
-} 
+}
